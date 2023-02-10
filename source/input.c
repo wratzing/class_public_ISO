@@ -1721,7 +1721,7 @@ int input_read_parameters_general(struct file_content * pfc,
   char * options_temp_contributions[10] = {"tsw","eisw","lisw","dop","pol","TSW","EISW","LISW","Dop","Pol"};
   char * options_number_count[8] = {"density","dens","rsd","RSD","lensing","lens","gr","GR"};
   char * options_modes[6] = {"s","v","t","S","V","T"};
-  char * options_ics[10] = {"ad","bi","cdi","nid","niv","AD","BI","CDI","NID","NIV"};
+  char * options_ics[10] = {"ad","bi","cdi","nid","vid","niv","AD","BI","CDI","NID","VID","NIV"};
 
   /* Set local default values */
   ppt->has_perturbations = _FALSE_;
@@ -1959,6 +1959,9 @@ int input_read_parameters_general(struct file_content * pfc,
         if ((strstr(string1,"nid") != NULL) || (strstr(string1,"NID") != NULL)){
           ppt->has_nid=_TRUE_;
         }
+        if ((strstr(string1,"vid") != NULL) || (strstr(string1,"VID") != NULL)){
+          ppt->has_vid=_TRUE_;
+        }
         if ((strstr(string1,"niv") != NULL) || (strstr(string1,"NIV") != NULL)){
           ppt->has_niv=_TRUE_;
         }
@@ -1967,11 +1970,33 @@ int input_read_parameters_general(struct file_content * pfc,
                    errmsg,
                    errmsg);
         class_test(flag1==_FALSE_,
-                   errmsg, "The options for 'ic' are {'ad','bi','cdi','nid','niv'}, you entered '%s'",string1);
-        class_test(ppt->has_ad==_FALSE_ && ppt->has_bi ==_FALSE_ && ppt->has_cdi ==_FALSE_ && ppt->has_nid ==_FALSE_ && ppt->has_niv ==_FALSE_,
+                   errmsg, "The options for 'ic' are {'ad','bi','cdi','nid','vid','niv'}, you entered '%s'",string1);
+        class_test(ppt->has_ad==_FALSE_ && ppt->has_bi ==_FALSE_ && ppt->has_cdi ==_FALSE_ && ppt->has_nid ==_FALSE_ && ppt->has_vid ==_FALSE_ && ppt->has_niv ==_FALSE_,
                    errmsg,
-                   "You specified 'ic' as '%s'. It has to contain some of {'ad','bi','cdi','nid','niv'}.",string1);
+                   "You specified 'ic' as '%s'. It has to contain some of {'ad','bi','cdi','nid','vid','niv'}.",string1);
       }
+      
+      /* If variable isocurvature initial conditions are requested, we need to read in it's parameters*/
+      if (ppt-> has_vid == _TRUE_){
+        class_call(parser_read_double(pfc,"vid_phi",&param1,&flag1,errmsg),
+                 errmsg,
+                 errmsg);
+        class_call(parser_read_double(pfc,"vid_sin_theta",&param2,&flag2,errmsg),
+                 errmsg,
+                 errmsg);
+        
+        /* Complete set of parameters */
+        if (flag1 == _TRUE_){
+          ppt-> vid_sin_phi= sin(param1);
+          ppt-> vid_cos_phi= cos(param1);
+        }
+        else if (flag2 == _TRUE_){
+          ppt-> vid_sin_theta= param1;
+          ppt-> vid_cos_theta= sqrt(1-param1*param1);
+        }
+      
+      }
+      
     }
     else {
       /* Test */
@@ -2845,6 +2870,22 @@ int input_read_parameters_species(struct file_content * pfc,
   }
   if (flag1 == _TRUE_ || flag2 == _TRUE_ || flag3 == _TRUE_)
     pba->Omega0_idr = stat_f_idr*pow(pba->T_idr/pba->T_cmb,4.)*pba->Omega0_g;
+    
+  
+  if (pba->Omega0_idr > 0.) {  
+  /** 7.2.2.e) idr_nature */
+      class_call(parser_read_string(pfc,"idr_nature",&string1,&flag1,errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag1 == _TRUE_) {
+        if ((strstr(string1,"free_streaming") != NULL) || (strstr(string1,"Free_Streaming") != NULL) || (strstr(string1,"Free_streaming") != NULL) || (strstr(string1,"FREE_STREAMING") != NULL)) {
+          ppt->idr_nature = idr_free_streaming;
+        }
+        if ((strstr(string1,"fluid") != NULL) || (strstr(string1,"Fluid") != NULL) || (strstr(string1,"FLUID") != NULL)) {
+          ppt->idr_nature = idr_fluid;
+        }
+      }
+    }
 
   /** 7.2.2.c) idm_dr coupling */
   /* Read */
@@ -4099,6 +4140,11 @@ int input_read_parameters_primordial(struct file_content * pfc,
         class_read_double("n_nid",ppm->n_nid);
         class_read_double("alpha_nid",ppm->alpha_nid);
       }
+      if (ppt->has_vid == _TRUE_) {
+        class_read_double("f_vid",ppm->f_vid);
+        class_read_double("n_vid",ppm->n_vid);
+        class_read_double("alpha_vid",ppm->alpha_vid);
+      }
       if (ppt->has_niv == _TRUE_) {
         class_read_double("f_niv",ppm->f_niv);
         class_read_double("n_niv",ppm->n_niv);
@@ -4122,6 +4168,11 @@ int input_read_parameters_primordial(struct file_content * pfc,
         class_read_double_one_of_two("n_ad_nid","n_nid_ad",ppm->n_ad_nid);
         class_read_double_one_of_two("alpha_ad_nid","alpha_nid_ad",ppm->alpha_ad_nid);
       }
+      if ((ppt->has_ad == _TRUE_) && (ppt->has_vid == _TRUE_)) {
+        class_read_double_one_of_two("c_ad_vid","c_vid_ad",ppm->c_ad_vid);
+        class_read_double_one_of_two("n_ad_vid","n_vid_ad",ppm->n_ad_vid);
+        class_read_double_one_of_two("alpha_ad_vid","alpha_vid_ad",ppm->alpha_ad_vid);
+      }
       if ((ppt->has_ad == _TRUE_) && (ppt->has_niv == _TRUE_)) {
         class_read_double_one_of_two("c_ad_niv","c_niv_ad",ppm->c_ad_niv);
         class_read_double_one_of_two("n_ad_niv","n_niv_ad",ppm->n_ad_niv);
@@ -4137,6 +4188,11 @@ int input_read_parameters_primordial(struct file_content * pfc,
         class_read_double_one_of_two("n_bi_nid","n_nid_bi",ppm->n_bi_nid);
         class_read_double_one_of_two("alpha_bi_nid","alpha_nid_bi",ppm->alpha_bi_nid);
       }
+      if ((ppt->has_bi == _TRUE_) && (ppt->has_vid == _TRUE_)) {
+        class_read_double_one_of_two("c_bi_vid","c_vid_bi",ppm->c_bi_vid);
+        class_read_double_one_of_two("n_bi_vid","n_vid_bi",ppm->n_bi_vid);
+        class_read_double_one_of_two("alpha_bi_vid","alpha_vid_bi",ppm->alpha_bi_vid);
+      }
       if ((ppt->has_bi == _TRUE_) && (ppt->has_niv == _TRUE_)) {
         class_read_double_one_of_two("c_bi_niv","c_niv_bi",ppm->c_bi_niv);
         class_read_double_one_of_two("n_bi_niv","n_niv_bi",ppm->n_bi_niv);
@@ -4147,15 +4203,30 @@ int input_read_parameters_primordial(struct file_content * pfc,
         class_read_double_one_of_two("n_cdi_nid","n_nid_cdi",ppm->n_cdi_nid);
         class_read_double_one_of_two("alpha_cdi_nid","alpha_nid_cdi",ppm->alpha_cdi_nid);
       }
+      if ((ppt->has_cdi == _TRUE_) && (ppt->has_vid == _TRUE_)) {
+        class_read_double_one_of_two("c_cdi_vid","c_vid_cdi",ppm->c_cdi_vid);
+        class_read_double_one_of_two("n_cdi_vid","n_vid_cdi",ppm->n_cdi_vid);
+        class_read_double_one_of_two("alpha_cdi_vid","alpha_vid_cdi",ppm->alpha_cdi_vid);
+      }
       if ((ppt->has_cdi == _TRUE_) && (ppt->has_niv == _TRUE_)) {
         class_read_double_one_of_two("c_cdi_niv","c_niv_cdi",ppm->c_cdi_niv);
         class_read_double_one_of_two("n_cdi_niv","n_niv_cdi",ppm->n_cdi_niv);
         class_read_double_one_of_two("alpha_cdi_niv","alpha_niv_cdi",ppm->alpha_cdi_niv);
       }
+      if ((ppt->has_nid == _TRUE_) && (ppt->has_vid == _TRUE_)) {
+        class_read_double_one_of_two("c_nid_vid","c_niv_vid",ppm->c_nid_vid);
+        class_read_double_one_of_two("n_nid_vid","n_niv_vid",ppm->n_nid_vid);
+        class_read_double_one_of_two("alpha_nid_vid","alpha_niv_vid",ppm->alpha_nid_vid);
+      }
       if ((ppt->has_nid == _TRUE_) && (ppt->has_niv == _TRUE_)) {
         class_read_double_one_of_two("c_nid_niv","c_niv_nid",ppm->c_nid_niv);
         class_read_double_one_of_two("n_nid_niv","n_niv_nid",ppm->n_nid_niv);
         class_read_double_one_of_two("alpha_nid_niv","alpha_niv_nid",ppm->alpha_nid_niv);
+      }
+      if ((ppt->has_vid == _TRUE_) && (ppt->has_niv == _TRUE_)) {
+        class_read_double_one_of_two("c_vid_niv","c_niv_vid",ppm->c_vid_niv);
+        class_read_double_one_of_two("n_vid_niv","n_niv_vid",ppm->n_vid_niv);
+        class_read_double_one_of_two("alpha_vid_niv","alpha_niv_vid",ppm->alpha_vid_niv);
       }
     }
 
@@ -4429,7 +4500,7 @@ int input_read_parameters_primordial(struct file_content * pfc,
       ppm->A_s = prr1*exp((ppm->n_s-1.)*log(ppm->k_pivot/k1));
 
       /** 1.f.3) Isocurvature amplitudes */
-      if ((ppt->has_bi == _TRUE_) || (ppt->has_cdi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_)){
+      if ((ppt->has_bi == _TRUE_) || (ppt->has_cdi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_vid == _TRUE_) || (ppt->has_niv == _TRUE_)){
         /* Read */
         class_read_double("P_{II}^1",pii1);
         class_read_double("P_{II}^2",pii2);
@@ -4512,6 +4583,12 @@ int input_read_parameters_primordial(struct file_content * pfc,
         ppm->c_ad_nid = c_cor;
         ppm->n_ad_nid = n_cor;
       }
+      if (ppt->has_vid == _TRUE_){
+        ppm->f_vid = f_iso;
+        ppm->n_vid = n_iso;
+        ppm->c_ad_vid = c_cor;
+        ppm->n_ad_vid = n_cor;
+      }
       if (ppt->has_niv == _TRUE_){
         ppm->f_niv = f_iso;
         ppm->n_niv = n_iso;
@@ -4562,7 +4639,7 @@ int input_read_parameters_primordial(struct file_content * pfc,
     class_test(ppt->has_tensors == _FALSE_,
                errmsg,
                "inflationary module cannot work if you do not ask for tensor modes");
-    class_test(ppt->has_bi == _TRUE_ || ppt->has_cdi == _TRUE_ || ppt->has_nid == _TRUE_ || ppt->has_niv == _TRUE_,
+    class_test(ppt->has_bi == _TRUE_ || ppt->has_cdi == _TRUE_ || ppt->has_nid == _TRUE_ || ppt->has_vid == _TRUE_ || ppt->has_niv == _TRUE_,
                errmsg,
                "inflationary module cannot work if you ask for isocurvature modes");
   }
@@ -5611,7 +5688,15 @@ int input_default_params(struct background *pba,
   ppt->has_bi=_FALSE_;
   ppt->has_cdi=_FALSE_;
   ppt->has_nid=_FALSE_;
+  ppt->has_vid=_FALSE_;
   ppt->has_niv=_FALSE_;
+  
+  /**variable isocurvature direction, coincides with DMI by default*/
+  ppt->vid_cos_theta=1.;
+  ppt->vid_sin_theta=0.;
+  ppt->vid_cos_phi=1.;
+  ppt->vid_sin_phi=0.;
+  
   /** 3.b) Initial conditions for tensors */
   ppt->tensor_method = tm_massless_approximation;
   ppt->evolve_tensor_ur = _FALSE_;
@@ -5884,6 +5969,9 @@ int input_default_params(struct background *pba,
   ppm->f_nid = 1.;
   ppm->n_nid = 1.;
   ppm->alpha_nid = 0.;
+  ppm->f_vid = 1.;
+  ppm->n_vid = 1.;
+  ppm->alpha_vid = 0.;
   ppm->f_niv = 1.;
   ppm->n_niv = 1.;
   ppm->alpha_niv = 0.;
@@ -5897,6 +5985,9 @@ int input_default_params(struct background *pba,
   ppm->c_ad_nid = 0.;
   ppm->n_ad_nid = 0.;
   ppm->alpha_ad_nid = 0.;
+  ppm->c_ad_vid = 0.;
+  ppm->n_ad_vid = 0.;
+  ppm->alpha_ad_vid = 0.;
   ppm->c_ad_niv = 0.;
   ppm->n_ad_niv = 0.;
   ppm->alpha_ad_niv = 0.;
@@ -5906,18 +5997,27 @@ int input_default_params(struct background *pba,
   ppm->c_bi_nid = 0.;
   ppm->n_bi_nid = 0.;
   ppm->alpha_bi_nid = 0.;
+  ppm->c_bi_vid = 0.;
+  ppm->n_bi_vid = 0.;
+  ppm->alpha_bi_vid = 0.;
   ppm->c_bi_niv = 0.;
   ppm->n_bi_niv = 0.;
   ppm->alpha_bi_niv = 0.;
   ppm->c_cdi_nid = 0.;
   ppm->n_cdi_nid = 0.;
   ppm->alpha_cdi_nid = 0.;
+  ppm->c_cdi_vid = 0.;
+  ppm->n_cdi_vid = 0.;
+  ppm->alpha_cdi_vid = 0.;
   ppm->c_cdi_niv = 0.;
   ppm->n_cdi_niv = 0.;
   ppm->alpha_cdi_niv = 0.;
-  ppm->c_nid_niv = 0.;
-  ppm->n_nid_niv = 0.;
-  ppm->alpha_nid_niv = 0.;
+  ppm->c_nid_vid = 0.;
+  ppm->n_nid_vid = 0.;
+  ppm->alpha_nid_vid = 0.;
+  ppm->c_vid_niv = 0.;
+  ppm->n_vid_niv = 0.;
+  ppm->alpha_vid_niv = 0.;
   /** 1.b.2) For tensor perturbations */
   ppm->r = 1.;
   ppm->n_t = -ppm->r/8.*(2.-ppm->r/8.-ppm->n_s);

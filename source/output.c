@@ -413,6 +413,13 @@ int output_cl(
               sprintf(file_name,"%s%s",pop->root,"cls_nid.dat");
               strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar neutrino density isocurvature (NID) mode");
             }
+            
+            if ((ppt->has_vid == _TRUE_) &&
+                (index_ic1 == ppt->index_ic_vid) && (index_ic2 == ppt->index_ic_vid)) {
+
+              sprintf(file_name,"%s%s",pop->root,"cls_vid.dat");
+              strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar varible density isocurvature (VID) mode");
+            }
 
             if ((ppt->has_niv == _TRUE_) &&
                 (index_ic1 == ppt->index_ic_niv) && (index_ic2 == ppt->index_ic_niv)) {
@@ -441,6 +448,13 @@ int output_cl(
               sprintf(file_name,"%s%s",pop->root,"cls_ad_nid.dat");
               strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross ADxNID mode");
             }
+            
+            if ((ppt->has_ad == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+                (index_ic1 == ppt->index_ic_ad) && (index_ic2 == ppt->index_ic_vid)) {
+
+              sprintf(file_name,"%s%s",pop->root,"cls_ad_vid.dat");
+              strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross ADxVID mode");
+            }
 
             if ((ppt->has_ad == _TRUE_) && (ppt->has_niv == _TRUE_) &&
                 (index_ic1 == ppt->index_ic_ad) && (index_ic2 == ppt->index_ic_niv)) {
@@ -462,6 +476,13 @@ int output_cl(
               sprintf(file_name,"%s%s",pop->root,"cls_bi_nid.dat");
               strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross BIxNID mode");
             }
+            
+            if ((ppt->has_bi == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+                (index_ic1 == ppt->index_ic_bi) && (index_ic2 == ppt->index_ic_vid)) {
+
+              sprintf(file_name,"%s%s",pop->root,"cls_bi_vid.dat");
+              strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross BIxVID mode");
+            }
 
             if ((ppt->has_bi == _TRUE_) && (ppt->has_niv == _TRUE_) &&
                 (index_ic1 == ppt->index_ic_bi) && (index_ic2 == ppt->index_ic_niv)) {
@@ -476,6 +497,13 @@ int output_cl(
               sprintf(file_name,"%s%s",pop->root,"cls_cdi_nid.dat");
               strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross CDIxNID mode");
             }
+            
+            if ((ppt->has_cdi == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+                (index_ic1 == ppt->index_ic_cdi) && (index_ic2 == ppt->index_ic_vid)) {
+
+              sprintf(file_name,"%s%s",pop->root,"cls_cdi_vid.dat");
+              strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross CDIxVID mode");
+            }
 
             if ((ppt->has_cdi == _TRUE_) && (ppt->has_niv == _TRUE_) &&
                 (index_ic1 == ppt->index_ic_cdi) && (index_ic2 == ppt->index_ic_niv)) {
@@ -483,12 +511,26 @@ int output_cl(
               sprintf(file_name,"%s%s",pop->root,"cls_cdi_niv.dat");
               strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross CDIxNIV mode");
             }
+            
+            if ((ppt->has_nid == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+                (index_ic1 == ppt->index_ic_nid) && (index_ic2 == ppt->index_ic_vid)) {
+
+              sprintf(file_name,"%s%s",pop->root,"cls_nid_vid.dat");
+              strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross NIDxVID mode");
+            }
 
             if ((ppt->has_nid == _TRUE_) && (ppt->has_niv == _TRUE_) &&
                 (index_ic1 == ppt->index_ic_nid) && (index_ic2 == ppt->index_ic_niv)) {
 
               sprintf(file_name,"%s%s",pop->root,"cls_nid_niv.dat");
               strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross NIDxNIV mode");
+            }
+            
+            if ((ppt->has_vid == _TRUE_) && (ppt->has_niv == _TRUE_) &&
+                (index_ic1 == ppt->index_ic_vid) && (index_ic2 == ppt->index_ic_niv)) {
+
+              sprintf(file_name,"%s%s",pop->root,"cls_vid_niv.dat");
+              strcpy(first_line,"[l(l+1)/2pi] C_l's for scalar cross VIDxNIV mode");
             }
 
           }
@@ -750,6 +792,11 @@ int output_pk(
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_nid.dat");
               strcpy(first_line,"for neutrino density isocurvature (NID) mode ");
             }
+            
+            if ((ppt->has_vid == _TRUE_) && (index_ic1 == ppt->index_ic_vid) && (index_ic2 == ppt->index_ic_vid)) {
+              sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_vid.dat");
+              strcpy(first_line,"for neutrino density isocurvature (VID) mode ");
+            }
 
             if ((ppt->has_niv == _TRUE_) && (index_ic1 == ppt->index_ic_niv) && (index_ic2 == ppt->index_ic_niv)) {
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_niv.dat");
@@ -770,6 +817,11 @@ int output_pk(
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_ad_nid.dat");
               strcpy(first_line,"for scalar cross ADxNID mode ");
             }
+            
+            if ((ppt->has_ad == _TRUE_) && (ppt->has_vid == _TRUE_) && (index_ic1 == ppt->index_ic_ad) && (index_ic2 == ppt->index_ic_vid)) {
+              sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_ad_vid.dat");
+              strcpy(first_line,"for scalar cross ADxVID mode ");
+            }
 
             if ((ppt->has_ad == _TRUE_) && (ppt->has_niv == _TRUE_) && (index_ic1 == ppt->index_ic_ad) && (index_ic2 == ppt->index_ic_niv)) {
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_ad_niv.dat");
@@ -785,6 +837,11 @@ int output_pk(
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_bi_nid.dat");
               strcpy(first_line,"for cross BIxNID mode ");
             }
+            
+            if ((ppt->has_bi == _TRUE_) && (ppt->has_vid == _TRUE_) && (index_ic1 == ppt->index_ic_bi) && (index_ic2 == ppt->index_ic_vid)) {
+              sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_bi_vid.dat");
+              strcpy(first_line,"for cross BIxVID mode ");
+            }
 
             if ((ppt->has_bi == _TRUE_) && (ppt->has_niv == _TRUE_) && (index_ic1 == ppt->index_ic_bi) && (index_ic2 == ppt->index_ic_niv)) {
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_bi_niv.dat");
@@ -795,15 +852,30 @@ int output_pk(
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_cdi_nid.dat");
               strcpy(first_line,"for cross CDIxNID mode ");
             }
+            
+            if ((ppt->has_cdi == _TRUE_) && (ppt->has_vid == _TRUE_) && (index_ic1 == ppt->index_ic_cdi) && (index_ic2 == ppt->index_ic_vid)) {
+              sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_cdi_vid.dat");
+              strcpy(first_line,"for cross CDIxVID mode ");
+            }
 
             if ((ppt->has_cdi == _TRUE_) && (ppt->has_niv == _TRUE_) && (index_ic1 == ppt->index_ic_cdi) && (index_ic2 == ppt->index_ic_niv)) {
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_cdi_niv.dat");
               strcpy(first_line,"for cross CDIxNIV mode ");
             }
+            
+            if ((ppt->has_nid == _TRUE_) && (ppt->has_vid == _TRUE_) && (index_ic1 == ppt->index_ic_nid) && (index_ic2 == ppt->index_ic_vid)) {
+              sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_nid_vid.dat");
+              strcpy(first_line,"for cross NIDxVID mode ");
+            }
 
             if ((ppt->has_nid == _TRUE_) && (ppt->has_niv == _TRUE_) && (index_ic1 == ppt->index_ic_nid) && (index_ic2 == ppt->index_ic_niv)) {
               sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_nid_niv.dat");
               strcpy(first_line,"for cross NIDxNIV mode ");
+            }
+            
+            if ((ppt->has_vid == _TRUE_) && (ppt->has_niv == _TRUE_) && (index_ic1 == ppt->index_ic_vid) && (index_ic2 == ppt->index_ic_niv)) {
+              sprintf(file_name,"%s%s%s%s",pop->root,redshift_suffix,type_suffix,"_vid_niv.dat");
+              strcpy(first_line,"for cross VIDxNIV mode ");
             }
 
             index_ic1_ic2 = index_symmetric_matrix(index_ic1,index_ic2,pfo->ic_size);
@@ -924,7 +996,7 @@ int output_tk(
   FileName file_name;
   char redshift_suffix[7]; // 7 is enough to write "z%d_" as long as there are at most 10'000 bins
   char first_line[_LINE_LENGTH_MAX_];
-  char ic_suffix[_SUFFIXNAMESIZE_];   // 4 is enough to write "ad", "bi", "cdi", "nid", "niv", ...
+  char ic_suffix[_SUFFIXNAMESIZE_];   // 4 is enough to write "ad", "bi", "cdi", "nid", "vid","niv", ...
 
 
   index_md=ppt->index_md_scalars;

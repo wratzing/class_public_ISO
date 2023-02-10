@@ -115,7 +115,9 @@ struct perturbations
   short has_bi;      /**< do we need isocurvature bi mode? */
   short has_cdi;     /**< do we need isocurvature cdi mode? */
   short has_nid;     /**< do we need isocurvature nid mode? */
+  short has_vid;     /**< do we need variable density isocurvature mode? */
   short has_niv;     /**< do we need isocurvature niv mode? */
+  
 
   /* perturbed recombination */
   /** Do we want to consider perturbed temperature and ionization fraction? */
@@ -176,6 +178,12 @@ struct perturbations
   double * beta_idr;  /**< Angular contribution to collisional term at l>=2 for idr-idr */
 
   int idr_nature; /**< Nature of the interacting dark radiation (free streaming or fluid) */
+  
+  /** Variable isocurvature direction parametrized as vid_sin_theta * IDRI + vid_cos_theta*(vid_cos_phi * DMI + vid_sin_phi * NID) */
+  double vid_cos_phi; 
+  double vid_sin_phi;
+  double vid_cos_theta;
+  double vid_sin_theta;
 
   //@}
 
@@ -210,7 +218,7 @@ struct perturbations
 
   //@}
 
-  /** @name - indices running on initial conditions (for scalars: ad, cdi, nid, niv; for tensors: only one) */
+  /** @name - indices running on initial conditions (for scalars: ad, cdi, nid, vid, niv; for tensors: only one) */
 
   //@{
 
@@ -218,6 +226,7 @@ struct perturbations
   int index_ic_cdi; /**< index value for CDM isocurvature */
   int index_ic_bi; /**< index value for baryon isocurvature */
   int index_ic_nid; /**< index value for neutrino density isocurvature */
+  int index_ic_vid; /**< index value for variable density  isocurvature*/
   int index_ic_niv; /**< index value for neutrino velocity isocurvature */
   int index_ic_ten; /**< index value for unique possibility for tensors */
 

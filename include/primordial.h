@@ -112,6 +112,10 @@ struct primordial {
   double f_nid;  /**< neutrino density isocurvature (NID) entropy-to-curvature ratio \f$ S_{nid}/R \f$*/
   double n_nid;  /**< NID tilt */
   double alpha_nid; /**< NID running */
+  
+  double f_vid;  /**< variable density isocurvature (VID) entropy-to-curvature ratio \f$ S_{vid}/R \f$*/
+  double n_vid;  /**< VID tilt */
+  double alpha_vid; /**< VID running */
 
   double f_niv;  /**< neutrino velocity isocurvature (NIV) entropy-to-curvature ratio \f$ S_{niv}/R \f$*/
   double n_niv;  /**< NIV tilt */
@@ -128,6 +132,10 @@ struct primordial {
   double c_ad_nid; /**< ADxNID cross-correlation at pivot scale, from -1 to 1 */
   double n_ad_nid; /**< ADxNID cross-correlation tilt */
   double alpha_ad_nid; /**< ADxNID cross-correlation running */
+  
+  double c_ad_vid; /**< ADxVID cross-correlation at pivot scale, from -1 to 1 */
+  double n_ad_vid; /**< ADxVID cross-correlation tilt */
+  double alpha_ad_vid; /**< ADxVID cross-correlation running */
 
   double c_ad_niv; /**< ADxNIV cross-correlation at pivot scale, from -1 to 1 */
   double n_ad_niv; /**< ADxNIV cross-correlation tilt */
@@ -140,6 +148,10 @@ struct primordial {
   double c_bi_nid; /**< BIxNIV cross-correlation at pivot scale, from -1 to 1 */
   double n_bi_nid; /**< BIxNIV cross-correlation tilt */
   double alpha_bi_nid; /**< BIxNIV cross-correlation running */
+  
+  double c_bi_vid; /**< BIxNIV cross-correlation at pivot scale, from -1 to 1 */
+  double n_bi_vid; /**< BIxNIV cross-correlation tilt */
+  double alpha_bi_vid; /**< BIxNIV cross-correlation running */
 
   double c_bi_niv; /**< BIxNIV cross-correlation at pivot scale, from -1 to 1 */
   double n_bi_niv; /**< BIxNIV cross-correlation tilt */
@@ -148,14 +160,26 @@ struct primordial {
   double c_cdi_nid; /**< CDIxNID cross-correlation at pivot scale, from -1 to 1 */
   double n_cdi_nid; /**< CDIxNID cross-correlation tilt */
   double alpha_cdi_nid; /**< CDIxNID cross-correlation running */
+  
+  double c_cdi_vid; /**< CDIxVID cross-correlation at pivot scale, from -1 to 1 */
+  double n_cdi_vid; /**< CDIxVID cross-correlation tilt */
+  double alpha_cdi_vid; /**< CDIxVID cross-correlation running */
 
   double c_cdi_niv; /**< CDIxNIV cross-correlation at pivot scale, from -1 to 1 */
   double n_cdi_niv; /**< CDIxNIV cross-correlation tilt */
   double alpha_cdi_niv; /**< CDIxNIV cross-correlation running */
+  
+  double c_nid_vid; /**< NIDxVID cross-correlation at pivot scale, from -1 to 1 */
+  double n_nid_vid; /**< NIDxVID cross-correlation tilt */
+  double alpha_nid_vid; /**< NIDxVID cross-correlation running */
 
   double c_nid_niv; /**< NIDxNIV cross-correlation at pivot scale, from -1 to 1 */
   double n_nid_niv; /**< NIDxNIV cross-correlation tilt */
   double alpha_nid_niv; /**< NIDxNIV cross-correlation running */
+  
+  double c_vid_niv; /**< VIDxNIV cross-correlation at pivot scale, from -1 to 1 */
+  double n_vid_niv; /**< VIDxNIV cross-correlation tilt */
+  double alpha_vid_niv; /**< VIDxNIV cross-correlation running */
 
   /** parameters describing the case primordial_spec_type = inflation_V */
 

@@ -386,7 +386,7 @@ int primordial_init(
                ppm->error_message,
                "external Pk module cannot work if you ask for vector modes");
 
-    class_test(ppt->has_bi == _TRUE_ || ppt->has_cdi == _TRUE_ || ppt->has_nid == _TRUE_ || ppt->has_niv == _TRUE_,
+    class_test(ppt->has_bi == _TRUE_ || ppt->has_cdi == _TRUE_ || ppt->has_nid == _TRUE_ || ppt->has_vid == _TRUE_ || ppt->has_niv == _TRUE_,
                ppm->error_message,
                "external Pk module cannot work if you ask for isocurvature modes (but that could be implemented easily in the future!)");
 
@@ -763,6 +763,12 @@ int primordial_analytic_spectrum_init(
           one_tilt = ppm->n_nid;
           one_running = ppm->alpha_nid;
         }
+        
+        if ((ppt->has_vid == _TRUE_) && (index_ic1 == ppt->index_ic_vid)) {
+          one_amplitude = ppm->A_s*ppm->f_vid*ppm->f_vid;
+          one_tilt = ppm->n_vid;
+          one_running = ppm->alpha_vid;
+        }
 
         if ((ppt->has_niv == _TRUE_) && (index_ic1 == ppt->index_ic_niv)) {
           one_amplitude = ppm->A_s*ppm->f_niv*ppm->f_niv;
@@ -823,6 +829,14 @@ int primordial_analytic_spectrum_init(
             one_tilt = ppm->n_ad_nid;
             one_running = ppm->alpha_ad_nid;
           }
+          
+          if ((ppt->has_ad == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+              (((index_ic1 == ppt->index_ic_ad) && (index_ic2 == ppt->index_ic_vid)) ||
+               ((index_ic2 == ppt->index_ic_ad) && (index_ic1 == ppt->index_ic_vid)))) {
+            one_correlation = ppm->c_ad_vid;
+            one_tilt = ppm->n_ad_vid;
+            one_running = ppm->alpha_ad_vid;
+          }
 
           if ((ppt->has_ad == _TRUE_) && (ppt->has_niv == _TRUE_) &&
               (((index_ic1 == ppt->index_ic_ad) && (index_ic2 == ppt->index_ic_niv)) ||
@@ -847,6 +861,14 @@ int primordial_analytic_spectrum_init(
             one_tilt = ppm->n_bi_nid;
             one_running = ppm->alpha_bi_nid;
           }
+          
+          if ((ppt->has_bi == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+              (((index_ic1 == ppt->index_ic_bi) && (index_ic2 == ppt->index_ic_vid)) ||
+               ((index_ic2 == ppt->index_ic_bi) && (index_ic1 == ppt->index_ic_vid)))) {
+            one_correlation = ppm->c_bi_vid;
+            one_tilt = ppm->n_bi_vid;
+            one_running = ppm->alpha_bi_vid;
+          }
 
           if ((ppt->has_bi == _TRUE_) && (ppt->has_niv == _TRUE_) &&
               (((index_ic1 == ppt->index_ic_bi) && (index_ic2 == ppt->index_ic_niv)) ||
@@ -863,6 +885,14 @@ int primordial_analytic_spectrum_init(
             one_tilt = ppm->n_cdi_nid;
             one_running = ppm->alpha_cdi_nid;
           }
+          
+          if ((ppt->has_cdi == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+              (((index_ic1 == ppt->index_ic_cdi) && (index_ic2 == ppt->index_ic_vid)) ||
+               ((index_ic2 == ppt->index_ic_cdi) && (index_ic1 == ppt->index_ic_vid)))) {
+            one_correlation = ppm->c_cdi_vid;
+            one_tilt = ppm->n_cdi_vid;
+            one_running = ppm->alpha_cdi_vid;
+          }
 
           if ((ppt->has_cdi == _TRUE_) && (ppt->has_niv == _TRUE_) &&
               (((index_ic1 == ppt->index_ic_cdi) && (index_ic2 == ppt->index_ic_niv)) ||
@@ -871,6 +901,14 @@ int primordial_analytic_spectrum_init(
             one_tilt = ppm->n_cdi_niv;
             one_running = ppm->alpha_cdi_niv;
           }
+          
+          if ((ppt->has_nid == _TRUE_) && (ppt->has_vid == _TRUE_) &&
+              (((index_ic1 == ppt->index_ic_nid) && (index_ic2 == ppt->index_ic_vid)) ||
+               ((index_ic2 == ppt->index_ic_nid) && (index_ic1 == ppt->index_ic_vid)))) {
+            one_correlation = ppm->c_nid_vid;
+            one_tilt = ppm->n_nid_vid;
+            one_running = ppm->alpha_nid_vid;
+          }
 
           if ((ppt->has_nid == _TRUE_) && (ppt->has_niv == _TRUE_) &&
               (((index_ic1 == ppt->index_ic_nid) && (index_ic2 == ppt->index_ic_niv)) ||
@@ -878,6 +916,14 @@ int primordial_analytic_spectrum_init(
             one_correlation = ppm->c_nid_niv;
             one_tilt = ppm->n_nid_niv;
             one_running = ppm->alpha_nid_niv;
+          }
+          
+          if ((ppt->has_vid == _TRUE_) && (ppt->has_niv == _TRUE_) &&
+              (((index_ic1 == ppt->index_ic_vid) && (index_ic2 == ppt->index_ic_niv)) ||
+               ((index_ic2 == ppt->index_ic_vid) && (index_ic1 == ppt->index_ic_niv)))) {
+            one_correlation = ppm->c_vid_niv;
+            one_tilt = ppm->n_vid_niv;
+            one_running = ppm->alpha_vid_niv;
           }
 
         }

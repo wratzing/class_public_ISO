@@ -12,12 +12,28 @@
 
 #define class_read_double(name,destination)                                     \
   do {                                                                          \
-    double param_temp; int flag_temp;                                           \
+    double param_temp, ln_param_temp; int flag_temp, ln_flag_temp;              \
+    char string_temp_1[_ARGUMENT_LENGTH_MAX_+100]="ln";                         \
+    char string_temp_2[_ARGUMENT_LENGTH_MAX_+100]="You can only enter one of '";\
     class_call(parser_read_double(pfc,name,&param_temp,&flag_temp,errmsg),      \
                errmsg,                                                          \
                errmsg);                                                         \
+    class_call(parser_read_double(pfc,strcat(string_temp_1,name),               \
+               &ln_param_temp,&ln_flag_temp,errmsg),                            \
+               errmsg,                                                          \
+               errmsg);                                                         \
+    strcat(string_temp_2,name);                                                 \
+    strcat(string_temp_2,"' or 'ln");                                           \
+    strcat(string_temp_2,name);                                                 \
+    strcat(string_temp_2,"'.");                                                 \
+    class_test((flag_temp == _TRUE_) && (ln_flag_temp == _TRUE_),               \
+                 errmsg,                                                        \
+                 string_temp_2);                                                \
     if (flag_temp == _TRUE_){                                                   \
       destination = param_temp;                                                 \
+    }                                                                           \
+    if (ln_flag_temp == _TRUE_){                                                \
+      destination = exp(ln_param_temp);                                         \
     }                                                                           \
   } while(0);
 

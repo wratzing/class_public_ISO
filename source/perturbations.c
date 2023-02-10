@@ -27,6 +27,14 @@
 #include "perturbations.h"
 
 
+//Macros for comaptibility with mathematica:
+#define Power_2(x) (x)*(x)
+#define Power_3(x) (x)*(x)*(x)
+#define Power_4(x) (x)*(x)*(x)*(x)
+#define EXPAND(...) __VA_ARGS__
+#define Power(x,N) EXPAND(Power_ ## N)(x)
+
+
 /**
  * Source function \f$ S^{X} (k, \tau) \f$ at a given conformal time tau.
  *
@@ -656,6 +664,11 @@ int perturbations_output_firstline_and_ic_suffix(
     strcpy(ic_suffix,"nid");
     strcpy(first_line,"for neutrino density isocurvature (NID) mode (normalized to initial entropy=1)");
   }
+  
+  if ((ppt->has_vid == _TRUE_) && (index_ic == ppt->index_ic_vid)) {
+    strcpy(ic_suffix,"vid");
+    strcpy(first_line,"for neutrino density isocurvature (VID) mode (normalized to initial entropy=1)");
+  }
 
   if ((ppt->has_niv == _TRUE_) && (index_ic == ppt->index_ic_niv)) {
     strcpy(ic_suffix,"niv");
@@ -813,7 +826,7 @@ int perturbations_init(
 
   if (pba->has_dcdm == _TRUE_) {
 
-    class_test((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
+    class_test((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_vid == _TRUE_) || (ppt->has_niv == _TRUE_),
                ppt->error_message,
                "Non-adiabatic initial conditions not coded in presence of decaying dark matter");
 
@@ -1543,13 +1556,14 @@ int perturbations_indices(
                  ppt->error_message,
                  "inconsistent input: you asked for scalars, so you should have at least one non-zero scalar source type (temperature, polarization, lensing/gravitational potential, ...). Please adjust your input.");
 
-      /** - --> count scalar initial conditions (for scalars: ad, cdi, nid, niv; for tensors: only one) and assign corresponding indices */
+      /** - --> count scalar initial conditions (for scalars: ad, cdi, nid, vid, niv; for tensors: only one) and assign corresponding indices */
 
       index_ic = 0;
       class_define_index(ppt->index_ic_ad, ppt->has_ad, index_ic,1);
       class_define_index(ppt->index_ic_bi, ppt->has_bi, index_ic,1);
       class_define_index(ppt->index_ic_cdi,ppt->has_cdi,index_ic,1);
       class_define_index(ppt->index_ic_nid,ppt->has_nid,index_ic,1);
+      class_define_index(ppt->index_ic_vid,ppt->has_vid,index_ic,1);
       class_define_index(ppt->index_ic_niv,ppt->has_niv,index_ic,1);
       ppt->ic_size[index_md] = index_ic;
 
@@ -5706,6 +5720,40 @@ int perturbations_initial_conditions(struct precision * ppr,
       eta = -ppr->entropy_ini*fracnu/(4.*fracnu+15.)/6.*ktau_two;
 
     }
+    
+    /** - --> (b.5.) Variable density Isocurvature */
+
+	/** Need to insert corect ini here */
+    if ((ppt->has_vid == _TRUE_) && (index_ic == ppt->index_ic_vid)) {
+
+      class_test((pba->has_ur == _FALSE_) && (pba->has_ncdm == _FALSE_),
+                 ppt->error_message,
+                 "not consistent to ask for NID in absence of ur or ncdm species!");
+
+      class_test((pba->has_idr == _TRUE_),
+                 ppt->error_message,
+                 "only adiabatic ic in presence of interacting dark radiation Teeest ");
+
+      ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*fracnu/fracg*(-1.+ktau_two/6.);
+      ppw->pv->y[ppw->pv->index_pt_theta_g] = -ppr->entropy_ini*fracnu/fracg*k*k*tau*(1./4.-fracb/fracg*3./16.*om*tau);
+
+      ppw->pv->y[ppw->pv->index_pt_delta_b] = ppr->entropy_ini*fracnu/fracg/8.*ktau_two;
+      ppw->pv->y[ppw->pv->index_pt_theta_b] = ppw->pv->y[ppw->pv->index_pt_theta_g];
+
+      if (pba->has_cdm == _TRUE_) {
+
+        ppw->pv->y[ppw->pv->index_pt_delta_cdm] = -ppr->entropy_ini*fracnu*fracb/fracg/80.*ktau_two*om*tau;
+
+      }
+
+      delta_ur = ppr->entropy_ini*(1.-ktau_two/6.);
+      theta_ur = ppr->entropy_ini*k*k*tau/4.;
+      shear_ur = ppr->entropy_ini*ktau_two/(4.*fracnu+15.)/2.;
+
+      eta = -ppr->entropy_ini*fracnu/(4.*fracnu+15.)/6.*ktau_two;
+
+    }
+    
 
     /** - --> (b.5.) Neutrino velocity Isocurvature */
 
