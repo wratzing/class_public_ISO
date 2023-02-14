@@ -1721,7 +1721,7 @@ int input_read_parameters_general(struct file_content * pfc,
   char * options_temp_contributions[10] = {"tsw","eisw","lisw","dop","pol","TSW","EISW","LISW","Dop","Pol"};
   char * options_number_count[8] = {"density","dens","rsd","RSD","lensing","lens","gr","GR"};
   char * options_modes[6] = {"s","v","t","S","V","T"};
-  char * options_ics[10] = {"ad","bi","cdi","nid","vid","niv","AD","BI","CDI","NID","VID","NIV"};
+  char * options_ics[12] = {"ad","bi","cdi","nid","vid","niv","AD","BI","CDI","NID","VID","NIV"};
 
   /* Set local default values */
   ppt->has_perturbations = _FALSE_;
@@ -1990,9 +1990,12 @@ int input_read_parameters_general(struct file_content * pfc,
           ppt-> vid_sin_phi= sin(param1);
           ppt-> vid_cos_phi= cos(param1);
         }
-        else if (flag2 == _TRUE_){
-          ppt-> vid_sin_theta= param1;
-          ppt-> vid_cos_theta= sqrt(1-param1*param1);
+        if (flag2 == _TRUE_){
+          class_test((param2*param2 > 1.0),
+                 errmsg,
+                 "abs(vid_sin_theta)>1 is inconsiten\n");
+          ppt-> vid_sin_theta= param2;
+          ppt-> vid_cos_theta= sqrt(1.0-param2*param2);
         }
       
       }

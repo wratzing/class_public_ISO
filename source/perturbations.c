@@ -5388,11 +5388,12 @@ int perturbations_initial_conditions(struct precision * ppr,
   double delta_dr=0;
   double q,epsilon,k2;
   int index_q,n_ncdm,idx;
-  double rho_r,rho_m,rho_nu,rho_m_over_rho_r, rho_cdm =0.;
-  double fracnu,fracg,fracb,fraccdm = 0.,fracidm = 0.;
+  double rho_r,rho_m,rho_nu ,rho_m_over_rho_r, rho_cdm =0.;
+  double fracnu,fracg,fracb,fraccdm = 0.,fracidm = 0., fracidr = 0.;
   double om;
   double ktau_two,ktau_three;
   double f_dr;
+  double prefactor;
 
   double delta_tot;
   double velocity_tot;
@@ -5452,7 +5453,6 @@ int perturbations_initial_conditions(struct precision * ppr,
 
     if (pba->has_idr == _TRUE_) {
       rho_r += ppw->pvecback[pba->index_bg_rho_idr];
-      rho_nu += ppw->pvecback[pba->index_bg_rho_idr];
     }
 
     if (pba->has_ncdm == _TRUE_) {
@@ -5482,6 +5482,11 @@ int perturbations_initial_conditions(struct precision * ppr,
     /* f_idm = Omega_idm(t_i) / Omega_m(t_i) */
     if (pba->has_idm == _TRUE_){
       fracidm =  ppw->pvecback[pba->index_bg_rho_idm]/rho_m;
+    }
+    
+    /* f_idr = Omega_idr(t_i) / Omega_r(t_i) */
+    if (pba->has_idr == _TRUE_){
+      fracidr =  ppw->pvecback[pba->index_bg_rho_idr]/rho_r;
     }
 
     /* Omega_m(t_i) / Omega_r(t_i) */
@@ -5528,7 +5533,15 @@ int perturbations_initial_conditions(struct precision * ppr,
          set to ppr->curvature_ini at leading order.  Factors s2
          appear through the solution of Einstein equations and
          equations of motion. */
-
+         
+      if ((pba->has_idr) && (ppt->idr_nature == idr_fluid)){
+        /*If idr is a fluid it behaves like the photons*/
+        fracg+=fracidr;
+      }
+      else{
+        /* Otherwise the code behaves as before we started modifications */
+        fracnu+=fracidr;
+      }
       /* photon density */
       ppw->pv->y[ppw->pv->index_pt_delta_g] = - ktau_two/3. * (1.-om*tau/5.)
         * ppr->curvature_ini * s2_squared;
@@ -5592,7 +5605,7 @@ int perturbations_initial_conditions(struct precision * ppr,
 
       /* all relativistic relics: ur, early ncdm, dr */
 
-      if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_) || (pba->has_idr == _TRUE_)) {
+      if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_) || ((pba->has_idr == _TRUE_)&&(ppt->idr_nature == idr_free_streaming))) {
 
         delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g]; /* density of ultra-relativistic neutrinos/relics */
 
@@ -5604,6 +5617,12 @@ int perturbations_initial_conditions(struct precision * ppr,
         l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
 
         if (pba->has_dr == _TRUE_) delta_dr = delta_ur;
+        
+      }
+      
+      if ((pba->has_idr == _TRUE_)&&(ppt->idr_nature == idr_fluid)) {
+        ppw->pv->y[ppw->pv->index_pt_delta_idr]=ppw->pv->y[ppw->pv->index_pt_delta_g];
+        ppw->pv->y[ppw->pv->index_pt_theta_idr]=ppw->pv->y[ppw->pv->index_pt_theta_g];
       }
 
       /* synchronous metric perturbation eta */
@@ -5723,34 +5742,111 @@ int perturbations_initial_conditions(struct precision * ppr,
     
     /** - --> (b.5.) Variable density Isocurvature */
 
-	/** Need to insert corect ini here */
     if ((ppt->has_vid == _TRUE_) && (index_ic == ppt->index_ic_vid)) {
 
-      class_test((pba->has_ur == _FALSE_) && (pba->has_ncdm == _FALSE_),
+      class_test((pba->has_ur == _FALSE_) && (pba->has_ncdm == _FALSE_)  && (ppt->vid_sin_phi != 0.),
                  ppt->error_message,
-                 "not consistent to ask for NID in absence of ur or ncdm species!");
+                 "not consistent to ask for VID with non-zero vid_sin_phi in absence of ur or ncdm species!");
 
-      class_test((pba->has_idr == _TRUE_),
+      class_test((pba->has_cdm == _FALSE_) && (ppt->vid_cos_phi != 0.),
                  ppt->error_message,
-                 "only adiabatic ic in presence of interacting dark radiation Teeest ");
+                 "not consistent to ask for VID with non-zero vid_cos_phi in absence of cdm!");
 
-      ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*fracnu/fracg*(-1.+ktau_two/6.);
-      ppw->pv->y[ppw->pv->index_pt_theta_g] = -ppr->entropy_ini*fracnu/fracg*k*k*tau*(1./4.-fracb/fracg*3./16.*om*tau);
+      class_test((pba->has_idr == _FALSE_) && (ppt->vid_sin_theta != 0.),
+                 ppt->error_message,
+                 "not consistent to ask for VID with non-zero vid_sin_theta in absence of idr!");
 
-      ppw->pv->y[ppw->pv->index_pt_delta_b] = ppr->entropy_ini*fracnu/fracg/8.*ktau_two;
-      ppw->pv->y[ppw->pv->index_pt_theta_b] = ppw->pv->y[ppw->pv->index_pt_theta_g];
+      class_test((pba->has_idr == _TRUE_) && (ppt->idr_nature != idr_fluid),
+                 ppt->error_message,
+                 " VID not implemented if idr_nature != fluid!");
+                 
+      /**Code below created with Mathematica*******************************/
+
+      /** CDI proportion ********************/
+      prefactor=ppr->entropy_ini*ppt->vid_cos_phi*ppt->vid_cos_theta;
+      ppw->pv->y[ppw->pv->index_pt_delta_g] = prefactor*((2*(-1 + fracb)*om*tau)/3. - ((-1 + fracb)*Power(om,2)*Power(tau,2))/4. + ((-1 + fracb)*om*(-4*Power(k,2) + 5*Power(om,2))*Power(tau,3))/60.);
+      ppw->pv->y[ppw->pv->index_pt_theta_g] = prefactor*(((-1 + fracb)*Power(k,2)*om*Power(tau,2))/12. + ((-1 + fracb)*(1 + 3*fracb - fracidr - fracnu)*Power(k,2)*Power(om,2)*Power(tau,3))/(48.*(-1 + fracidr + fracnu)));
+
+      ppw->pv->y[ppw->pv->index_pt_delta_b] = prefactor*(((-1 + fracb)*om*tau)/2. - (3*(-1 + fracb)*Power(om,2)*Power(tau,2))/16. + ((-1 + fracb)*om*(-4*Power(k,2) + 5*Power(om,2))*Power(tau,3))/80.);
+      ppw->pv->y[ppw->pv->index_pt_theta_b] = prefactor*(((-1 + fracb)*Power(k,2)*om*Power(tau,2))/12. + ((-1 + fracb)*(1 + 3*fracb - fracidr - fracnu)*Power(k,2)*Power(om,2)*Power(tau,3))/(48.*(-1 + fracidr + fracnu)));
 
       if (pba->has_cdm == _TRUE_) {
 
-        ppw->pv->y[ppw->pv->index_pt_delta_cdm] = -ppr->entropy_ini*fracnu*fracb/fracg/80.*ktau_two*om*tau;
+        ppw->pv->y[ppw->pv->index_pt_delta_cdm] = prefactor*(1 + ((-1 + fracb)*om*tau)/2. - (3*(-1 + fracb)*Power(om,2)*Power(tau,2))/16. + ((-1 + fracb)*om*(-16*Power(k,2) + 45*Power(om,2))*Power(tau,3))/720.);
 
       }
 
-      delta_ur = ppr->entropy_ini*(1.-ktau_two/6.);
-      theta_ur = ppr->entropy_ini*k*k*tau/4.;
-      shear_ur = ppr->entropy_ini*ktau_two/(4.*fracnu+15.)/2.;
+      delta_ur = prefactor*((2*(-1 + fracb)*om*tau)/3. - ((-1 + fracb)*Power(om,2)*Power(tau,2))/4. + ((-1 + fracb)*om*(-4*Power(k,2) + 5*Power(om,2))*Power(tau,3))/60.);
+      theta_ur = prefactor*(((-1 + fracb)*Power(k,2)*om*Power(tau,2))/12. - ((-1 + fracb)*Power(k,2)*Power(om,2)*Power(tau,3))/48.);
+      shear_ur = prefactor*(((-1 + fracb)*Power(k,2)*om*Power(tau,3))/(6.*(15 + 2*fracnu)));
+      l3_ur = prefactor*(0);
 
-      eta = -ppr->entropy_ini*fracnu/(4.*fracnu+15.)/6.*ktau_two;
+      if (pba->has_idr == _TRUE_) {
+
+        ppw->pv->y[ppw->pv->index_pt_delta_idr] = prefactor*((2*(-1 + fracb)*om*tau)/3. - ((-1 + fracb)*Power(om,2)*Power(tau,2))/4. + ((-1 + fracb)*om*(-4*Power(k,2) + 5*Power(om,2))*Power(tau,3))/60.);
+        ppw->pv->y[ppw->pv->index_pt_theta_idr] = prefactor*(((-1 + fracb)*Power(k,2)*om*Power(tau,2))/12. - ((-1 + fracb)*Power(k,2)*Power(om,2)*Power(tau,3))/48.);
+
+      }
+
+      eta = prefactor*(((-1 + fracb)*om*tau)/6. - ((-1 + fracb)*Power(om,2)*Power(tau,2))/16. + ((-1 + fracb)*om*(-2*(5 + 4*fracnu)*Power(k,2) + 5*(15 + 2*fracnu)*Power(om,2))*Power(tau,3))/(6.*(600 + 80*fracnu)));
+
+      /** NID proportion ********************/
+      prefactor=ppr->entropy_ini*ppt->vid_sin_phi*ppt->vid_cos_theta;
+      ppw->pv->y[ppw->pv->index_pt_delta_g] += prefactor*((-4*fracnu)/3. + (2*fracnu*om*tau)/3. + (fracnu*(8*Power(k,2) - 9*Power(om,2))*Power(tau,2))/36. + (((-2*fracnu*(fracb*(-6 + fracidr + fracnu) + 3*(-1 + fracidr + fracnu))*Power(k,2)*om)/(15.*(-1 + fracidr + fracnu)) + (fracnu*Power(om,3))/2.)*Power(tau,3))/6.);
+      ppw->pv->y[ppw->pv->index_pt_theta_g] += prefactor*(-(fracnu*Power(k,2)*tau)/3. + (fracnu*(-1 - 3*fracb + fracidr + fracnu)*Power(k,2)*om*Power(tau,2))/(12.*(-1 + fracidr + fracnu)) + (((fracnu*Power(k,4))/9. - (fracnu*(9*Power(fracb,2) + Power(-1 + fracidr + fracnu,2))*Power(k,2)*Power(om,2))/(8.*Power(-1 + fracidr + fracnu,2)))*Power(tau,3))/6.);
+
+      ppw->pv->y[ppw->pv->index_pt_delta_b] += prefactor*(-fracnu + (fracnu*om*tau)/2. + (fracnu*(8*Power(k,2) - 9*Power(om,2))*Power(tau,2))/48. + ((-(fracnu*(fracb*(-6 + fracidr + fracnu) + 3*(-1 + fracidr + fracnu))*Power(k,2)*om)/(10.*(-1 + fracidr + fracnu)) + (3*fracnu*Power(om,3))/8.)*Power(tau,3))/6.);
+      ppw->pv->y[ppw->pv->index_pt_theta_b] += prefactor*(-(fracnu*Power(k,2)*tau)/3. + (fracnu*(-1 - 3*fracb + fracidr + fracnu)*Power(k,2)*om*Power(tau,2))/(12.*(-1 + fracidr + fracnu)) + (((fracnu*Power(k,4))/9. - (fracnu*(9*Power(fracb,2) + Power(-1 + fracidr + fracnu,2))*Power(k,2)*Power(om,2))/(8.*Power(-1 + fracidr + fracnu,2)))*Power(tau,3))/6.);
+
+      if (pba->has_cdm == _TRUE_) {
+
+        ppw->pv->y[ppw->pv->index_pt_delta_cdm] += prefactor*(-fracnu + (fracnu*om*tau)/2. - (3*fracnu*Power(om,2)*Power(tau,2))/16. + ((-((4 + 3*fracb)*fracnu*Power(k,2)*om)/30. + (3*fracnu*Power(om,3))/8.)*Power(tau,3))/6.);
+
+      }
+
+      delta_ur += prefactor*((-4*(-1 + fracnu))/3. + (2*fracnu*om*tau)/3. + (((4*(-1 + fracnu)*Power(k,2))/9. - (fracnu*Power(om,2))/2.)*Power(tau,2))/2. + (((-2*(3 + fracb)*fracnu*Power(k,2)*om)/15. + (fracnu*Power(om,3))/2.)*Power(tau,3))/6.);
+      theta_ur += prefactor*(-((-1 + fracnu)*Power(k,2)*tau)/3. + (fracnu*Power(k,2)*om*Power(tau,2))/12. + ((((-1 + fracnu)*(27 + 4*fracnu)*Power(k,4))/(9.*(15 + 4*fracnu)) - (fracnu*Power(k,2)*Power(om,2))/8.)*Power(tau,3))/6.);
+      shear_ur += prefactor*((-2*(-1 + fracnu)*Power(k,2)*Power(tau,2))/(45 + 12*fracnu) + ((61 - 4*fracnu)*fracnu*Power(k,2)*om*Power(tau,3))/(18.*(15 + 2*fracnu)*(15 + 4*fracnu)));
+      l3_ur += prefactor*((-4*(-1 + fracnu)*Power(k,3)*Power(tau,3))/(21.*(15 + 4*fracnu)));
+
+      if (pba->has_idr == _TRUE_) {
+
+        ppw->pv->y[ppw->pv->index_pt_delta_idr] += prefactor*((-4*fracnu)/3. + (2*fracnu*om*tau)/3. + (fracnu*(8*Power(k,2) - 9*Power(om,2))*Power(tau,2))/36. + (fracnu*om*(-4*(3 + fracb)*Power(k,2) + 15*Power(om,2))*Power(tau,3))/180.);
+        ppw->pv->y[ppw->pv->index_pt_theta_idr] += prefactor*(-(fracnu*Power(k,2)*tau)/3. + (fracnu*Power(k,2)*om*Power(tau,2))/12. + (fracnu*Power(k,2)*(8*Power(k,2) - 9*Power(om,2))*Power(tau,3))/432.);
+
+      }
+
+      eta += prefactor*((fracnu*om*tau)/6. + (((4*(-1 + fracnu)*fracnu*Power(k,2))/(9.*(15 + 4*fracnu)) - (fracnu*Power(om,2))/8.)*Power(tau,2))/2. + ((-(fracnu*(-175 + 16*fracnu*(40 + 3*fracnu) + 2*fracb*(15 + 2*fracnu)*(15 + 4*fracnu))*Power(k,2)*om)/(60.*(15 + 2*fracnu)*(15 + 4*fracnu)) + (fracnu*Power(om,3))/8.)*Power(tau,3))/6.);
+
+      /** IDRID proportion ********************/
+      prefactor=ppr->entropy_ini*ppt->vid_sin_theta;
+      ppw->pv->y[ppw->pv->index_pt_delta_g] += prefactor*((-4*fracidr)/3. + (2*fracidr*om*tau)/3. + (fracidr*(8*Power(k,2) - 9*Power(om,2))*Power(tau,2))/36. + (((-2*fracidr*(3 + fracb - (5*fracb)/(-1 + fracidr + fracnu))*Power(k,2)*om)/15. + (fracidr*Power(om,3))/2.)*Power(tau,3))/6.);
+      ppw->pv->y[ppw->pv->index_pt_theta_g] += prefactor*(-(fracidr*Power(k,2)*tau)/3. + (fracidr*(-1 - 3*fracb + fracidr + fracnu)*Power(k,2)*om*Power(tau,2))/(12.*(-1 + fracidr + fracnu)) + (((fracidr*Power(k,4))/9. - (fracidr*(1 + (9*Power(fracb,2))/Power(-1 + fracidr + fracnu,2))*Power(k,2)*Power(om,2))/8.)*Power(tau,3))/6.);
+
+      ppw->pv->y[ppw->pv->index_pt_delta_b] += prefactor*(-fracidr + (fracidr*om*tau)/2. + (fracidr*(8*Power(k,2) - 9*Power(om,2))*Power(tau,2))/48. + ((-(fracidr*(3 + fracb - (5*fracb)/(-1 + fracidr + fracnu))*Power(k,2)*om)/10. + (3*fracidr*Power(om,3))/8.)*Power(tau,3))/6.);
+      ppw->pv->y[ppw->pv->index_pt_theta_b] += prefactor*(-(fracidr*Power(k,2)*tau)/3. + (fracidr*(-1 - 3*fracb + fracidr + fracnu)*Power(k,2)*om*Power(tau,2))/(12.*(-1 + fracidr + fracnu)) + (((fracidr*Power(k,4))/9. - (fracidr*(1 + (9*Power(fracb,2))/Power(-1 + fracidr + fracnu,2))*Power(k,2)*Power(om,2))/8.)*Power(tau,3))/6.);
+
+      if (pba->has_cdm == _TRUE_) {
+
+        ppw->pv->y[ppw->pv->index_pt_delta_cdm] += prefactor*(-fracidr + (fracidr*om*tau)/2. - (3*fracidr*Power(om,2)*Power(tau,2))/16. + ((-((4 + 3*fracb)*fracidr*Power(k,2)*om)/30. + (3*fracidr*Power(om,3))/8.)*Power(tau,3))/6.);
+
+      }
+
+      delta_ur += prefactor*((-4*fracidr)/3. + (2*fracidr*om*tau)/3. + (fracidr*(8*Power(k,2) - 9*Power(om,2))*Power(tau,2))/36. + (fracidr*om*(-4*(3 + fracb)*Power(k,2) + 15*Power(om,2))*Power(tau,3))/180.);
+      theta_ur += prefactor*(-(fracidr*Power(k,2)*tau)/3. + (fracidr*Power(k,2)*om*Power(tau,2))/12. + (((fracidr*(27 + 4*fracnu)*Power(k,4))/(9.*(15 + 4*fracnu)) - (fracidr*Power(k,2)*Power(om,2))/8.)*Power(tau,3))/6.);
+      shear_ur += prefactor*((-2*fracidr*Power(k,2)*Power(tau,2))/(45 + 12*fracnu) - (fracidr*(-45 + 4*fracnu)*Power(k,2)*om*Power(tau,3))/(18.*(15 + 2*fracnu)*(15 + 4*fracnu)));
+      l3_ur += prefactor*((-4*fracidr*Power(k,3)*Power(tau,3))/(3.*(105 + 28*fracnu)));
+
+      if (pba->has_idr == _TRUE_) {
+
+        ppw->pv->y[ppw->pv->index_pt_delta_idr] += prefactor*((-4*(-1 + fracidr))/3. + (2*fracidr*om*tau)/3. + (((4*(-1 + fracidr)*Power(k,2))/9. - (fracidr*Power(om,2))/2.)*Power(tau,2))/2. + (fracidr*om*(-4*(3 + fracb)*Power(k,2) + 15*Power(om,2))*Power(tau,3))/180.);
+        ppw->pv->y[ppw->pv->index_pt_theta_idr] += prefactor*(-((-1 + fracidr)*Power(k,2)*tau)/3. + (fracidr*Power(k,2)*om*Power(tau,2))/12. + ((((-1 + fracidr)*Power(k,4))/9. - (fracidr*Power(k,2)*Power(om,2))/8.)*Power(tau,3))/6.);
+
+      }
+
+      eta += prefactor*((fracidr*om*tau)/6. + (fracidr*((4*fracnu*Power(k,2))/(9.*(15 + 4*fracnu)) - Power(om,2)/8.)*Power(tau,2))/2. + ((-(fracidr*(225 + 16*fracnu*(40 + 3*fracnu) + 2*fracb*(15 + 2*fracnu)*(15 + 4*fracnu))*Power(k,2)*om)/(60.*(15 + 2*fracnu)*(15 + 4*fracnu)) + (fracidr*Power(om,3))/8.)*Power(tau,3))/6.);
+      
+      /**Code above created with Mathematica*******************************/
 
     }
     
@@ -5842,12 +5938,17 @@ int perturbations_initial_conditions(struct precision * ppr,
       // note: if there are no neutrinos, fracnu, delta_ur and theta_ur below will consistently be zero.
 
       delta_tot = (fracg*ppw->pv->y[ppw->pv->index_pt_delta_g]+fracnu*delta_ur+rho_m_over_rho_r*(fracb*ppw->pv->y[ppw->pv->index_pt_delta_b]+fraccdm*delta_cdm))/(1.+rho_m_over_rho_r);
-
+      
       velocity_tot = ((4./3.)*(fracg*ppw->pv->y[ppw->pv->index_pt_theta_g]+fracnu*theta_ur) + rho_m_over_rho_r*fracb*ppw->pv->y[ppw->pv->index_pt_theta_b])/(1.+rho_m_over_rho_r);
 
       if (ppt->has_idm_dr == _TRUE_ ) {
         delta_tot += rho_m_over_rho_r*fracidm*ppw->pv->y[ppw->pv->index_pt_delta_idm]/(1.+rho_m_over_rho_r);
         velocity_tot += rho_m_over_rho_r*fracidm*ppw->pv->y[ppw->pv->index_pt_theta_idm]/(1.+rho_m_over_rho_r);
+      }
+      
+      if ((pba->has_idr == _TRUE_)&&(ppt->idr_nature == idr_fluid)) {
+        delta_tot += fracidr * ppw->pv->y[ppw->pv->index_pt_delta_idr];
+        velocity_tot += (4./3.)*fracidr * ppw->pv->y[ppw->pv->index_pt_theta_idr];
       }
 
       alpha = (eta + 3./2.*a_prime_over_a*a_prime_over_a/k/k/s2_squared*(delta_tot + 3.*a_prime_over_a/k/k*velocity_tot))/a_prime_over_a;
@@ -5897,7 +5998,7 @@ int perturbations_initial_conditions(struct precision * ppr,
            +ppw->pvecback[pba->index_bg_phi_prime_scf]*alpha_prime);
       }
 
-      if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_)  || (pba->has_idr == _TRUE_)) {
+      if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_)  || (pba->has_idr == _TRUE_ && ppt->idr_nature == idr_free_streaming)) {
 
         delta_ur -= 4.*a_prime_over_a*alpha;
         theta_ur += k*k*alpha;
@@ -5905,6 +6006,13 @@ int perturbations_initial_conditions(struct precision * ppr,
 
         if (pba->has_dr == _TRUE_)
           delta_dr += (-4.*a_prime_over_a + a*pba->Gamma_dcdm*ppw->pvecback[pba->index_bg_rho_dcdm]/ppw->pvecback[pba->index_bg_rho_dr])*alpha;
+
+      }
+      
+      if ((pba->has_idr == _TRUE_) && (ppt->idr_nature == idr_fluid)) {
+
+        ppw->pv->y[ppw->pv->index_pt_delta_idr] -= 4.*a_prime_over_a*alpha;
+        ppw->pv->y[ppw->pv->index_pt_theta_idr] += k*k*alpha;
 
       }
 
@@ -5924,7 +6032,7 @@ int perturbations_initial_conditions(struct precision * ppr,
 
     }
 
-    if (pba->has_idr == _TRUE_){
+    if ((pba->has_idr == _TRUE_) && (ppt->idr_nature == idr_free_streaming)) {
       if (ppw->approx[ppw->index_ap_rsa_idr]==(int)rsa_idr_off) { // TODO: check if needed?
         ppw->pv->y[ppw->pv->index_pt_delta_idr] = delta_ur;
         ppw->pv->y[ppw->pv->index_pt_theta_idr] = theta_ur;
@@ -6316,7 +6424,7 @@ int perturbations_approximations(
     if (pba->has_idr == _TRUE_){
 
       if ((tau/tau_k > ppr->idr_streaming_trigger_tau_over_tau_k) &&
-          (tau > pth->tau_idr_free_streaming) &&
+          /*(tau > pth->tau_idr_free_streaming) &&  Allow free streaming also in fluid case. Probably bad, but saves a lot of time. Compensated by choosing the times for the switching late in percisions.h*/
           (pth->has_idm_dr == _FALSE_ || pth->n_index_idm_dr >= 2) &&
           (ppr->idr_streaming_approximation != rsa_idr_none)){
 
@@ -8486,7 +8594,6 @@ int perturbations_print_variables(double tau,
     if (ppt->gauge == synchronous) {
 
       /* density and velocity perturbations (comment out if you wish to keep synchronous variables) */
-
       delta_g -= 4. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
       theta_g += k*k*alpha;
 
